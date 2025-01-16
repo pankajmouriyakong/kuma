@@ -1,86 +1,68 @@
 {
-  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
-  schedule: 'before 5am every weekday',
-  extends: [
-    'config:best-practices',
-    ':automergeDisabled',
-    ':gitSignOff',
-    ':label(dependencies)',
-    ':semanticCommitTypeAll(chore)',
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "schedule": "before 5am every weekday",
+  "extends": [
+    "config:best-practices",
+    ":automergeDisabled",
+    ":gitSignOff",
+    ":label(dependencies)",
+    ":semanticCommitTypeAll(chore)",
   ],
-  baseBranches: [
-    'master',
+  "baseBranches": [
+    "master",
   ],
-  enabledManagers: [
-    'custom.regex',
+  "enabledManagers": [
+    "custom.regex",
+    "dockerfile",
+    "github-actions",
+    "gomod",
+    "helm-values",
   ],
-  postUpdateOptions: [
-    'gomodMassage',
-    'gomodTidy',
+  "postUpdateOptions": [
+    "gomodMassage", // Adjust Go module replacements after updates
+    "gomodTidy", // Run `go mod tidy` after updates
   ],
-  ignorePaths: [
-    '(^|/)([Dd]ocker|[Cc]ontainer)file[^/]*\\.dockerignore$',
+  "ignorePaths": [
+    "(^|/)([Dd]ocker|[Cc]ontainer)file[^/]*\\.dockerignore$",
   ],
-  customManagers: [
+  "customManagers": [
     {
-      customType: 'regex',
-      fileMatch: [
-        '\\.github/.*\\.ya?ml$',
+      "customType": "regex",
+      "fileMatch": ["\\.github\/.*\\.ya?ml$"],
+      "matchStrings": [
+        "(?<packageName>pankajmouriyakong\\/shared-actions-pankaj\\/(?<depName>[^\\s@]+))@(?:(?<currentDigest>[^\\s]+) # v?)?(?<currentValue>[^\\s]+)",
       ],
-      matchStrings: [
-        '(?<packageName>pankajmouriyakong\\/shared-actions-pankaj\\/(?<depName>[^\\s@]+))@(?:(?<currentDigest>[^\\s]+) # )?v(?<currentValue>[^\\s]+)',
-      ],
-      datasourceTemplate: 'github-tags',
-      extractVersionTemplate: '^(?:@{{{depName}}}@|v)(?<version>[0-9\\.]+)$',
-      autoReplaceStringTemplate: '{{{packageName}}}@{{#if newDigest}}{{{newDigest}}} # {{/if}}v{{{newVersion}}}',
-      versioningTemplate: 'semver',
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^(?:@{{{depName}}}@|v)(?<version>[0-9\\.]+)$",
+      "autoReplaceStringTemplate": "{{{packageName}}}@{{{newDigest}}} # v{{{newVersion}}}",
+      "versioningTemplate": "semver",
     },
   ],
-  packageRules: [
+  "packageRules": [
     {
-      groupName: 'google.golang.org/genproto/googleapis/*',
-      groupSlug: 'genproto-googleapis',
-      matchDatasources: [
-        'go',
-      ],
-      matchPackageNames: [
-        'google.golang.org/genproto/googleapis/**',
-      ],
+      "groupName": "google.golang.org/genproto/googleapis/*",
+      "groupSlug": "genproto-googleapis",
+      "matchDatasources": ["go"],
+      "matchPackageNames": ["google.golang.org/genproto/googleapis/**"],
     },
     {
-      matchManagers: [
-        'github-actions',
-      ],
-      addLabels: [
-        'ci/skip-test',
-      ],
+      // Skip tests for GitHub Actions updates
+      "matchManagers": ["github-actions"],
+      "addLabels": ["ci/skip-test"],
     },
     {
-      matchPackageNames: [
-        'pankajmouriyakong/shared-actions-pankaj',
-        'Kong/public-shared-actions',
-      ],
-      matchManagers: [
-        'github-actions',
-      ],
-      enabled: false,
+      // Manage Kong/public-shared-actions updates using the custom manager,
+      // so disable the default GitHub Actions manager for these
+      "matchPackageNames": ["pankajmouriyakong/shared-actions-pankaj"],
+      "matchManagers": ["github-actions"],
+      "enabled": false,
     },
     {
-      matchDatasources: [
-        'github-tags',
-      ],
-      pinDigest: {
-        enabled: true,
-      },
-    },
-    {
-      matchManagers: [
-        'github-actions',
-      ],
-      matchPackageNames: [
-        'slsa-framework/slsa-github-generator',
-      ],
-      pinDigests: false,
+      // SLSA-GitHub-Generator cannot be pinned by digest
+      // More info: https://github.com/slsa-framework/slsa-github-generator/blob/main/RENOVATE.md
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["slsa-framework/slsa-github-generator"],
+      "pinDigests": false,
     },
   ],
 }
