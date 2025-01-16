@@ -1,0 +1,75 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "schedule": "before 5am every weekday",
+  "extends": [
+    "config:best-practices",
+    ":automergeDisabled",
+    ":gitSignOff",
+    ":label(dependencies)",
+    ":semanticCommitTypeAll(chore)",
+  ],
+  "baseBranches": [
+    "master",
+  ],
+  "enabledManagers": [
+    "custom.regex",
+//    "dockerfile",
+//    "github-actions",
+//    "gomod",
+//    "helm-values",
+  ],
+  "postUpdateOptions": [
+    "gomodMassage", // Adjust Go module replacements after updates
+    "gomodTidy", // Run `go mod tidy` after updates
+  ],
+  "ignorePaths": [
+    "(^|/)([Dd]ocker|[Cc]ontainer)file[^/]*\\.dockerignore$",
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["\\.github\/.*\\.ya?ml$"],
+      "matchStrings": [
+        "(?<packageName>pankajmouriyakong\\/shared-actions-pankaj\\/(?<depName>[^\\s@]+))@(?:(?<currentDigest>[^\\s]+) # )?v(?<currentValue>[^\\s]+)",
+      ],
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^(?:@{{{depName}}}@|v)(?<version>[0-9\\.]+)$",
+      "autoReplaceStringTemplate": "{{{packageName}}}@{{#if newDigest}}{{{newDigest}}} # {{/if}}v{{{newVersion}}}",
+      "versioningTemplate": "semver",
+    },
+  ],
+  "packageRules": [
+    {
+      "groupName": "google.golang.org/genproto/googleapis/*",
+      "groupSlug": "genproto-googleapis",
+      "matchDatasources": ["go"],
+      "matchPackageNames": ["google.golang.org/genproto/googleapis/**"],
+    },
+    {
+      // Skip tests for GitHub Actions updates
+      "matchManagers": ["github-actions"],
+      "addLabels": ["ci/skip-test"],
+    },
+    {
+      // Manage pankajmouriyakong/shared-actions-pankaj updates using the custom manager,
+      // so disable the default GitHub Actions manager for these
+      "matchPackageNames": [
+        "pankajmouriyakong/shared-actions-pankaj",
+        "Kong/public-shared-actions",
+      ],
+      "matchManagers": ["github-actions"],
+      "enabled": false,
+    },
+    {
+      "matchDatasources": ["github-tags"],
+      "pinDigest": true,
+    },
+    {
+      // SLSA-GitHub-Generator cannot be pinned by digest
+      // More info: https://github.com/slsa-framework/slsa-github-generator/blob/main/RENOVATE.md
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["slsa-framework/slsa-github-generator"],
+      "pinDigests": false,
+    },
+  ],
+}
